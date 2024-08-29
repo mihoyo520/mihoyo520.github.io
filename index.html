@@ -1,3 +1,7 @@
+
+
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -101,7 +105,7 @@
     .preview-window {
       margin-top: 10px;
       width: 100%;
-      height: 500px;
+      height: 500px; /* Increased height for better visibility */
       border: 1px solid #ccc;
       border-radius: 10px;
       overflow: auto;
@@ -219,70 +223,11 @@
         width: auto;
       }
     }
-    #password-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-  }
-
-  #password-message {
-    background: white;
-    padding: 40px;
-    border-radius: 10px;
-    text-align: center;
-    font-size: 18px;
-    max-width: 400px;
-    width: 90%;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  }
-
-  #password-message p {
-    margin-bottom: 20px;
-  }
-
-  #password-input {
-    width: 100%;
-    padding: 15px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-size: 16px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    transition: border-color 0.3s, box-shadow 0.3s;
-  }
-
-  #password-input:focus {
-    border-color: #4CAF50;
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
-    outline: none;
-  }
-
-  #password-message button {
-    padding: 10px 20px;
-    border: none;
-    background-color: #4CAF50;
-    color: white;
-    font-size: 16px;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-  }
-
-  #password-message button:hover {
-    background-color: #45a049;
-  }
   </style>
 </head>
 <body>
   <div id="header">WUWANGZE-AI</div>
-  <div id="chat-container" style="display: none;">
+  <div id="chat-container">
     <div id="chat-box"></div>
     <div id="input-container">
       <input type="text" id="user-input" placeholder="Type a message">
@@ -290,29 +235,18 @@
         <button onclick="sendMessage()">Send</button>
         <button id="delete-btn" onclick="deleteMessages()">Delete</button>
         <div id="model-selector">
-          <select id="model-options" onchange="changeModel()">
-            <option value="GLM-4-0520">GLM-4-0520</option>  
-            <option value="GLM-4-AllTools">GLM-4-AllTools</option>
-            <option value="GLM-4-Air">GLM-4-Air</option>   
+          <select id="model-options" onchange="changeModel()"> 
             <option value="GLM-4-Flash">GLM-4-Flash</option>
           </select>
         </div>
       </div>
     </div>
   </div>
-  <div id="password-modal">
-    <div id="password-message">
-      <p>请输入访问密码：</p>
-      <input type="password" id="password-input" placeholder="密码">
-      <button onclick="checkPassword()">确认</button>
-    </div>
-  </div>
 
   <div id="welcome-modal">
     <div id="welcome-message">
       <p>该网站为AI问答网站，可以向AI提问，AI会耐心进行解答，可以和AI聊天</p>
-      <p>欢迎进入官方QQ交流群：992310237<br>您的进群便是对我最大的支持</p>
-      <p>支持HTML代码在线预览，flash为回答最快速的模型</p>
+      <p>支持HTML代码在线预览</p>
       <p>PS：如遇到长时间不回复，请重试</p>
       <button onclick="closeModal()">确认</button>
     </div>
@@ -320,18 +254,8 @@
 
   <script>
     var conversation = [];
-    var selectedModel = "GLM-4-0520";
+    var selectedModel = "GLM-4-Flash";
     var sequence = 1;
-
-    function checkPassword() {
-      var password = document.getElementById("password-input").value.trim();
-      if (password === "wwz333409") {
-        document.getElementById("password-modal").style.display = "none";
-        document.getElementById("chat-container").style.display = "flex";
-      } else {
-        window.location.href = "https://www.baidu.com";
-      }
-    }
 
     function sendMessage() {
       var userInput = document.getElementById("user-input").value.trim();
@@ -347,7 +271,7 @@
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: "Bearer ef365f5975e3758fe6c6917003c7aca5.U4Z5DEl8qbnYRQWY",
+          Authorization: "Bearer c8e2e4d0ab3af80d2301b174f5fa7b2a.4OqaQul4ajMRr5x1",  
         },
         body: JSON.stringify({
           model: selectedModel,
@@ -356,13 +280,13 @@
           temperature: 0.5,
           max_tokens: 160000,
         }),
-      };
+      };    
       fetch("https://open.bigmodel.cn/api/paas/v4/chat/completions", requestOptions)
         .then(response => {
           const reader = response.body.getReader();
           const decoder = new TextDecoder();
           let botResponse = '';
-          appendMessage("AI", "");
+          appendMessage("AI", ""); 
           function read() {
             reader.read().then(({ done, value }) => {
               if (done) {
@@ -437,11 +361,14 @@
       var previewWindow = document.createElement("div");
       previewWindow.className = "preview-window";
       
+      // 只提取代码块部分
       var codeBlockMatch = text.match(/```html\s*([\s\S]*?)\s*```/);
       var codeContent = codeBlockMatch ? codeBlockMatch[1] : '';
       
+      // Ensure text is properly escaped
       var escapedText = codeContent.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
       
+      // Create iframe and set srcdoc property
       previewWindow.innerHTML = `<iframe srcdoc="${escapedText}"></iframe>`;
       messageElement.appendChild(previewWindow);
     }
@@ -478,15 +405,6 @@
       modal.style.display = 'none';
     }
 
-    function detectDevTools() {
-      var threshold = 160; // Threshold for detecting devtools
-      var width = window.outerWidth - window.innerWidth > threshold;
-      var height = window.outerHeight - window.innerHeight > threshold;
-      if (width || height) {
-        window.location.href = "https://www.baidu.com";
-      }
-    }
-
     document.getElementById("user-input").addEventListener("keydown", function (event) {
       if (event.key === "Enter") {
         event.preventDefault();
@@ -498,22 +416,6 @@
       var modal = document.getElementById('welcome-modal');
       modal.style.display = 'flex';
     };
-
-    (function() {
-      // Detect F12 key and right-click
-      document.addEventListener("keydown", function(event) {
-        if (event.key === "F12") {
-          detectDevTools();
-        }
-      });
-      document.addEventListener("contextmenu", function(event) {
-        event.preventDefault();
-      });
-      // Periodic detection of devtools
-      setInterval(detectDevTools, 1000);
-      // Resize event for detecting devtools
-      window.addEventListener("resize", detectDevTools);
-    })();
   </script>
 </body>
 </html>
