@@ -1,230 +1,507 @@
-<!DOCTYPE html> 
-<html lang="en"> 
-<head> 
-    <meta charset="UTF-8"> 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
-    <title>WWZ Stream Player</title> 
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script> 
-    <style> 
-        body { 
-            font-family: 'Roboto', sans-serif; 
-            margin: 0; 
-            padding: 0; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            min-height: 100vh; 
-            background: linear-gradient(135deg, #ffffff, #e0e0e0); 
-            color: #333; 
-        } 
- 
-        h1 { 
-            margin-bottom: 20px; 
-            font-size: 24px; 
-            color: #4caf50; 
-            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); 
-        } 
- 
-        #player-container { 
-            width: 90%; 
-            max-width: 800px; 
-            background: rgba(255, 255, 255, 0.8); 
-            border-radius: 15px; 
-            overflow: hidden; 
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2); 
-            backdrop-filter: blur(10px); 
-            transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out; 
-            opacity: 1; 
-        } 
- 
-        #player-container.hidden { 
-            transform: translateY(-20px); 
-            opacity: 0; 
-        } 
- 
-        video { 
-            width: 100%; 
-            height: auto; 
-            outline: none; 
-        } 
- 
-        #channel-toggle { 
-            position: fixed; 
-            top: 20px; 
-            right: 20px; 
-            padding: 12px 20px; 
-            background: linear-gradient(135deg, #4caf50, #2e7d32); 
-            color: #fff; 
-            border: none; 
-            border-radius: 25px; 
-            cursor: pointer; 
-            font-size: 16px; 
-            font-weight: bold; 
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); 
-            transition: background 0.3s ease, transform 0.2s ease; 
-        } 
- 
-        #channel-toggle:hover { 
-            background: linear-gradient(135deg, #2e7d32, #4caf50); 
-            transform: scale(1.05); 
-        } 
- 
-        #channel-menu { 
-            position: fixed; 
-            top: 80px; 
-            right: 20px; 
-            background: rgba(255, 255, 255, 0.9); 
-            color: #333; 
-            border-radius: 15px; 
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1); 
-            padding: 15px; 
-            display: none; 
-            flex-direction: column; 
-            gap: 15px; 
-            z-index: 1000; 
-            width: 250px; 
-            backdrop-filter: blur(10px); 
-            max-height: 60vh; 
-            overflow-y: auto; 
-        } 
- 
-        .channel-button { 
-            padding: 12px 20px; 
-            background: linear-gradient(135deg, #f5f5f5, #e0e0e0); 
-            color: #333; 
-            border: none; 
-            border-radius: 25px; 
-            cursor: pointer; 
-            font-size: 14px; 
-            font-weight: bold; 
-            transition: background-color 0.3s ease, transform 0.2s ease; 
-            text-align: center; 
-        } 
- 
-        .channel-button:hover { 
-            background: linear-gradient(135deg, #eeeeee, #dddddd); 
-            transform: translateY(-3px); 
-        } 
- 
-        .channel-button.active { 
-            background: linear-gradient(135deg, #4caf50, #2e7d32); 
-            color: #fff; 
-        } 
- 
-        @media (max-width: 768px) { 
-            #player-container { 
-                width: 100%; 
-            } 
- 
-            #channel-menu { 
-                width: 200px; 
-            } 
- 
-            #channel-toggle { 
-                padding: 10px 15px; 
-                font-size: 14px; 
-            } 
- 
-            .channel-button { 
-                padding: 10px 15px; 
-                font-size: 12px; 
-            } 
-        } 
-    </style> 
-</head> 
-<body> 
-    <h1>WWZ Stream Player</h1> 
-    <div id="player-container"> 
-        <video id="video" controls autoplay></video> 
-    </div> 
- 
-    <button id="channel-toggle">Channels</button> 
-    <div id="channel-menu"> 
-        <!-- Channel buttons will be dynamically added here --> 
-    </div> 
- 
-    <script> 
-        document.addEventListener('DOMContentLoaded', () => { 
-            const video = document.getElementById('video'); 
-            const playerContainer = document.getElementById('player-container'); 
-            const channelMenu = document.getElementById('channel-menu'); 
-            const channelToggle = document.getElementById('channel-toggle'); 
- 
-            // Array of channels 
-            const channels = [ 
-                { name: "影视1线", url: "https://stream.swagit.com/live-edge/houstontx/smil:hd-16x9-2-a/playlist.m3u8" },
-                { name: "影视2线", url: "https://cdn-apse1-prod.tsv2.amagi.tv/linear/amg01076-lightningintern-petclub-samsungnz/playlist.m3u8" },
-                { name: "影视3线",
-url:"https://chlivemta1.akamaized.net/hls/live/2010556/mta3alarabia/playlist.m3u8" },
-                { name: "影视4线", url: "https://live-uk.s4c-cdn.co.uk/out/v1/a0134f1fd5a2461b9422b574566d4442/live_uk.m3u8" },
-                { name: "影视5线", url: "https://livemtaasia.akamaized.net/hls/live/2039224/mta6asia/playlist.m3u8" },
-                { name: "影视6线", url: "http://albuk.dyndns.tv:1935/albuk/albuk.stream/playlist.m3u8" },
-                { name: "影视7线", url: "https://live.streamingfast.net/osmflivech2.m3u8" },
-                { name: "影视8线", url: "http://210.210.155.37/uq2663/h/h19/index.m3u8" },
-                { name: "影视9线", url: "https://og2qd3aal7an-hls-live.5centscdn.com/garshomtv/d0dbe915091d400bd8ee7f27f0791303.sdp/playlist.m3u8" },
-                { name: "影视10线", url: "https://ythls.armelin.one/channel/UCMbq0m2vILQTbc0VhOcVWaQ.m3u8" }
-                
-            ]; 
- 
-            let currentChannelIndex = 0; 
- 
-            // Function to play a channel 
-            function playChannel(index) { 
-                const channel = channels[index]; 
-                if (!channel) return; 
- 
-                currentChannelIndex = index; 
- 
-                // Highlight active channel 
-                document.querySelectorAll('.channel-button').forEach((button, idx) => { 
-                    button.classList.toggle('active', idx === index); 
-                }); 
- 
-                // Load video source 
-                if (Hls.isSupported()) { 
-                    const hls = new Hls(); 
-                    hls.loadSource(channel.url); 
-                    hls.attachMedia(video); 
-                    hls.on(Hls.Events.MANIFEST_PARSED, () => { 
-                        video.play(); 
-                    }); 
-                } else if (video.canPlayType('application/vnd.apple.mpegurl')) { 
-                    video.src = channel.url; 
-                    video.addEventListener('loadedmetadata', () => { 
-                        video.play(); 
-                    }); 
-                } else { 
-                    alert('Your browser does not support this video stream!'); 
-                } 
- 
-                // Animate player container 
-                playerContainer.classList.remove('hidden'); 
-            } 
- 
-            // Generate channel buttons 
-            channels.forEach((channel, index) => { 
-                const button = document.createElement('button'); 
-                button.textContent = channel.name; 
-                button.className = 'channel-button'; 
-                button.addEventListener('click', () => { 
-                    playChannel(index); 
-                    channelMenu.style.display = 'none'; 
-                }); 
-                channelMenu.appendChild(button); 
-            }); 
- 
-            // Ensure scrollability for many channels 
-            channelMenu.style.overflowY = 'auto'; 
- 
-            // Toggle channel menu visibility 
-            channelToggle.addEventListener('click', () => { 
-                channelMenu.style.display = channelMenu.style.display === 'none' || channelMenu.style.display === '' ? 'flex' : 'none'; 
-            }); 
- 
-            // Play the first channel by default 
-            playChannel(currentChannelIndex); 
-        }); 
-    </script> 
-</body> 
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>何治华小朋友的小金库</title>
+    <style>
+        /* 基础重置 */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background: #f5f6fa;
+            line-height: 1.6;
+        }
+
+        /* 容器样式 */
+        .container {
+            max-width: 100%;
+            padding: 20px;
+            margin: 0 auto;
+        }
+
+        /* 登录页面 */
+        .login-container {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            margin: 2rem auto;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: #2c3e50;
+        }
+
+        /* 钱包主界面 */
+        .wallet-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            max-width: 800px;
+            margin: 1rem auto;
+        }
+
+        /* 响应式布局 */
+        @media (max-width: 768px) {
+            .wallet-container {
+                margin: 0.5rem;
+                padding: 1rem;
+            }
+        }
+
+        /* 按钮组 */
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .button {
+            padding: 0.8rem 1.2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .button-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .button-success {
+            background: #2ecc71;
+            color: white;
+        }
+
+        .button-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        /* 余额显示 */
+        .balance-card {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            margin: 1.5rem 0;
+            text-align: center;
+        }
+
+        .balance-amount {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 1rem 0;
+        }
+
+        /* 交易记录 */
+        .transaction-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1.5rem;
+            overflow-x: auto;
+            display: block;
+        }
+
+        .transaction-table th,
+        .transaction-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .transaction-table th {
+            background: #f8f9fa;
+            color: #2c3e50;
+        }
+
+        /* 弹出层 */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        /* 输入组 */
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .input-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #2c3e50;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #bdc3c7;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        /* 加载动画 */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 登录页面 -->
+    <div id="login-page" class="container">
+        <div class="login-container">
+            <h2 class="login-header">🔐 小金库登录</h2>
+            <div class="input-group">
+                <input type="text" class="input-field" id="username" placeholder="请输入你哒名字~" required>
+            </div>
+            <div class="input-group">
+                <input type="password" class="input-field" id="password" placeholder="输入密码嗷~" required>
+            </div>
+            <button class="button button-primary" onclick="login()">登录</button>
+        </div>
+    </div>
+
+    <!-- 钱包主界面 -->
+    <div id="wallet-page" class="container" style="display: none;">
+        <div class="wallet-container">
+            <!-- 头部 -->
+            <div class="header-bar">
+                <h2>💰 何治华小朋友的小金库</h2>
+                <button class="button button-danger" onclick="logout()">退出登录</button>
+            </div>
+
+            <!-- 余额卡片 -->
+            <div class="balance-card">
+                <div>当前余额</div>
+                <div class="balance-amount" id="balance-amount">$0.00</div>
+                <div>人民币 (CNY)</div>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="button-group">
+                <button class="button button-success" onclick="openModal('recharge-modal')">充值</button>
+                <button class="button button-primary" onclick="openModal('payment-modal')">支付</button>
+                <button class="button button-primary" onclick="openModal('transfer-modal')">转账</button>
+            </div>
+
+            <!-- 交易记录 -->
+            <h3>📋 交易记录</h3>
+            <table class="transaction-table">
+                <thead>
+                    <tr>
+                        <th>时间</th>
+                        <th>类型</th>
+                        <th>金额</th>
+                        <th>余额</th>
+                    </tr>
+                </thead>
+                <tbody id="transaction-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 充值弹窗 -->
+    <div id="recharge-modal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('recharge-modal')">&times;</button>
+            <h3>💰 账户充值</h3>
+            <div class="input-group">
+                <input type="number" class="input-field" id="recharge-amount" placeholder="请输入充值金额" min="0">
+            </div>
+            <div class="input-group">
+                <input type="password" class="input-field" id="recharge-password" placeholder="请输入安全密码">
+            </div>
+            <button class="button button-success" onclick="processRecharge()">确认充值</button>
+        </div>
+    </div>
+
+    <!-- 支付弹窗 -->
+    <div id="payment-modal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('payment-modal')">&times;</button>
+            <h3>💳 发起支付</h3>
+            <div class="input-group">
+                <input type="text" class="input-field" id="payment-card" placeholder="收款方银行卡号">
+            </div>
+            <div class="input-group">
+                <input type="number" class="input-field" id="payment-amount" placeholder="支付金额" min="0">
+            </div>
+            <div class="input-group">
+                <input type="password" class="input-field" id="payment-password" placeholder="安全密码">
+            </div>
+            <button class="button button-primary" onclick="processPayment()">确认支付</button>
+        </div>
+    </div>
+
+    <!-- 转账弹窗 -->
+    <div id="transfer-modal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('transfer-modal')">&times;</button>
+            <h3>↔️ 账户转账</h3>
+            <div class="input-group">
+                <input type="text" class="input-field" id="transfer-card" placeholder="收款方银行卡号">
+            </div>
+            <div class="input-group">
+                <input type="number" class="input-field" id="transfer-amount" placeholder="转账金额" min="0">
+            </div>
+            <div class="input-group">
+                <input type="password" class="input-field" id="transfer-password" placeholder="安全密码">
+            </div>
+            <button class="button button-primary" onclick="processTransfer()">确认转账</button>
+        </div>
+    </div>
+
+    <!-- 加载动画 -->
+    <div class="loading-overlay" id="loading">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <script>
+        // 初始化数据
+        let currentUser = null;
+        let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+        let balance = parseFloat(localStorage.getItem('balance')) || 0;
+
+        // 页面初始化
+        window.onload = () => {
+            updateBalanceDisplay();
+            renderTransactions();
+        };
+
+        // 登录功能
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (username === "何治华" && password === "wwzlovehzh") {
+                currentUser = { username, password };
+                document.getElementById('login-page').style.display = 'none';
+                document.getElementById('wallet-page').style.display = 'block';
+            } else {
+                alert('认证失败，请检查用户名和密码');
+            }
+        }
+
+        // 登出功能
+        function logout() {
+            currentUser = null;
+            document.getElementById('wallet-page').style.display = 'none';
+            document.getElementById('login-page').style.display = 'block';
+        }
+
+        // 弹窗控制
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'flex';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+            clearInputs(modalId);
+        }
+
+        // 清空输入
+        function clearInputs(modalId) {
+            const inputs = document.querySelectorAll(`#${modalId} .input-field`);
+            inputs.forEach(input => input.value = '');
+        }
+
+        // 处理充值
+        function processRecharge() {
+            const amount = parseFloat(document.getElementById('recharge-amount').value);
+            const password = document.getElementById('recharge-password').value;
+            
+            if (!validateInput(amount, password)) return;
+
+            showLoading();
+            setTimeout(() => {
+                balance += amount;
+                addTransaction('充值', amount, balance);
+                updateStorage();
+                closeModal('recharge-modal');
+                hideLoading();
+                alert(`成功充值 $${amount.toFixed(2)}`);
+            }, 1500);
+        }
+
+        // 处理支付
+        function processPayment() {
+            const amount = parseFloat(document.getElementById('payment-amount').value);
+            const password = document.getElementById('payment-password').value;
+            
+            if (!validateInput(amount, password)) return;
+            if (!checkBalance(amount)) return;
+
+            showLoading();
+            setTimeout(() => {
+                balance -= amount;
+                addTransaction('支付', -amount, balance);
+                updateStorage();
+                closeModal('payment-modal');
+                hideLoading();
+                alert(`支付成功 $${amount.toFixed(2)}`);
+            }, 1500);
+        }
+
+        // 处理转账
+        function processTransfer() {
+            const amount = parseFloat(document.getElementById('transfer-amount').value);
+            const password = document.getElementById('transfer-password').value;
+            
+            if (!validateInput(amount, password)) return;
+            if (!checkBalance(amount)) return;
+
+            showLoading();
+            setTimeout(() => {
+                balance -= amount;
+                addTransaction('转账', -amount, balance);
+                updateStorage();
+                closeModal('transfer-modal');
+                hideLoading();
+                alert(`成功转账 $${amount.toFixed(2)}`);
+            }, 1500);
+        }
+
+        // 通用验证
+        function validateInput(amount, password) {
+            if (password !== "wwzlovehzh") {
+                alert('安全密码错误');
+                return false;
+            }
+            if (isNaN(amount) || amount <= 0) {
+                alert('请输入有效的金额');
+                return false;
+            }
+            return true;
+        }
+
+        // 余额检查
+        function checkBalance(amount) {
+            if (amount > balance) {
+                alert('余额不足');
+                return false;
+            }
+            return true;
+        }
+
+        // 更新本地存储
+        function updateStorage() {
+            localStorage.setItem('balance', balance);
+            localStorage.setItem('transactions', JSON.stringify(transactions));
+            updateBalanceDisplay();
+            renderTransactions();
+        }
+
+        // 更新余额显示
+        function updateBalanceDisplay() {
+            document.getElementById('balance-amount').textContent = `$${balance.toFixed(2)}`;
+        }
+
+        // 添加交易记录
+        function addTransaction(type, amount, balanceAfter) {
+            const transaction = {
+                date: new Date().toLocaleString(),
+                type,
+                amount: amount.toFixed(2),
+                balance: balanceAfter.toFixed(2)
+            };
+            transactions.push(transaction);
+        }
+
+        // 渲染交易记录
+        function renderTransactions() {
+            const tbody = document.getElementById('transaction-body');
+            tbody.innerHTML = transactions.map(t => `
+                <tr>
+                    <td>${t.date}</td>
+                    <td>${t.type}</td>
+                    <td>${t.amount}</td>
+                    <td>${t.balance}</td>
+                </tr>
+            `).join('');
+        }
+
+        // 加载状态控制
+        function showLoading() {
+            document.getElementById('loading').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+    </script>
+</body>
 </html>
